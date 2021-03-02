@@ -3,6 +3,8 @@ import './App.css';
 import axios from 'axios';
 import { spotify } from './Spotify_Credentials';
 import { Dropdown } from './components/Dropdown';
+import { TrackBox } from './components/TrackBox';
+import { Detail } from './components/Detail';
 
 function App() {
   const [token, setToken] = useState('');
@@ -14,6 +16,11 @@ function App() {
     selectedPlaylist: '',
     listOfPlaylistFromAPI: [],
   });
+  const [tracks, setTracks] = useState({
+    selectedTrack: '',
+    listOfTracksFromAPI: [],
+  });
+  const [trackDetail, setTrackDetail] = useState(null);
 
   useEffect(() => {
     axios('https://accounts.spotify.com/api/token', {
@@ -27,7 +34,7 @@ function App() {
       method: 'post',
     }).then((tokenResponse) => {
       setToken(tokenResponse.data.access_token);
-      console.log(tokenResponse.data.access_token);
+      // console.log(tokenResponse.data.access_token);
 
       axios('https://api.spotify.com/v1/browse/categories?locale=sv_US', {
         method: 'GET',
@@ -45,6 +52,7 @@ function App() {
   }, []);
 
   const genreChanged = (val) => {
+    console.log(val);
     setGenres({
       selectedGenre: val,
       listOfGenresFromAPI: genres.listOfGenresFromAPI,
@@ -60,7 +68,7 @@ function App() {
     ).then((playlistResponse) => {
       setPlaylists({
         selectedPlaylist: playlists.selectedPlaylist,
-        listOfPlaylistFromAPI: playlistResponse.data.playlists.item,
+        listOfPlaylistFromAPI: playlistResponse.data.playlists.items,
       });
     });
   };
@@ -72,27 +80,59 @@ function App() {
     });
   };
 
+  const buttonClicked = (e) => {
+    e.preventDefault();
+    axios(
+      `https://api.spotify.com/v1/playlists/${playlists.selectedPlaylist}/tracks?limit=10`,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: 'Bearer ' + token,
+        },
+      }
+    ).then((tracksResponse) => {
+      console.log(tracksResponse);
+      setTracks({
+        selectedTrack: tracks.selectedTrack,
+        listOfTracksFromAPI: tracksResponse.data.items,
+      });
+    });
+  };
+  const trackBoxClicked = (val) => {
+    const currentTracks = [...tracks.listOfTracksFromAPI];
+    const trackInfo = currentTracks.filter((t) => t.track.id === val);
+    setTrackDetail(trackInfo[0].track);
+  };
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-      }}
-    >
-      <div className="container">
+    <div className="container">
+      <form onSubmit={buttonClicked}>
         <Dropdown
+          label="Genre :"
           lists={genres.listOfGenresFromAPI}
           selectedValue={genres.selectedGenre}
           changed={genreChanged}
         />
         <Dropdown
+          label="Playlist :"
           lists={playlists.listOfPlaylistFromAPI}
           selectedValue={playlists.selectedPlaylist}
           changed={playlistChanged}
         />
-
-        <button type="submit">Search</button>
-      </div>
-    </form>
+        <div className="col-sm-6 row form-group px-0">
+          <button type="submit" className="btn btn-success col-sm-12">
+            Search
+          </button>
+        </div>
+        <div className="row">
+          <TrackBox
+            lists={tracks.listOfTracksFromAPI}
+            clicked={trackBoxClicked}
+            onClick={buttonClicked}
+          />
+          {trackDetail && <Detail {...trackDetail} />}
+        </div>
+      </form>
+    </div>
   );
 }
 

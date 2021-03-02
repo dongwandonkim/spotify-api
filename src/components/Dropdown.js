@@ -3,11 +3,17 @@ export const Dropdown = (props) => {
     props.changed(e.target.value);
   };
   return (
-    <div>
-      <select value={props.selectedValue} onChange={dropdownChanged}>
+    <div className="col-sm-6 form-group row px-0">
+      <label className="form-label col-sm-2">{props.label}</label>
+      <select
+        value={props.selectedValue}
+        onChange={dropdownChanged}
+        className="form-control form-control-sm col-sm-10"
+      >
+        <option key={0}>Select...</option>
         {props.lists.map((data, idx) => {
           return (
-            <option key={idx} value={data.id}>
+            <option key={idx + 1} value={data.id}>
               {data.name}
             </option>
           );
